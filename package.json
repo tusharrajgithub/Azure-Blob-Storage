@@ -30,6 +30,7 @@
     "azure-storage": "^2.8.1",
     "dotenv": "^8.2.0",
     "imagemagick-stream": "^4.1.1",
+    "jquery": "^3.5.1",
     "mime": "^2.2.0",
     "request": "^2.69.0",
     "uniqid": "~4.1.1"

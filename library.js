@@ -22,7 +22,7 @@ var settings = {
 	secretAccessKey: false,
 	container: process.env.AZURE_STORAGE_CONTAINER,
 	host:process.env.AZURE_STORAGE_HOSTNAME,
-	path:`${process.env.AZURE_STORAGE_CONTAINER}/nodebb`,
+	path:undefined,
 	storageAccessKey:process.env.AZURE_STORAGE_ACCESS_KEY,
 	storageAccount:process.env.AZURE_STORAGE_ACCOUNT,
 	connectionString: `DefaultEndpointsProtocol=https;AccountName=${process.env.AZURE_STORAGE_ACCOUNT};AccountKey=${process.env.AZURE_STORAGE_ACCESS_KEY};EndpointSuffix=core.windows.net`
@@ -58,6 +58,7 @@ plugin.load = function (params, callback) {
 
 		params.router.post("/api" + adminRoute + "/assettings", assettings);
 		params.router.post("/api" + adminRoute + "/credentials", credentials);
+		params.router.get("/downloads/sasgenerator",sasGenerator);
 
 		callback();
 	});
@@ -123,11 +124,11 @@ function fetchSettings(callback) {
 			settings.host = newSettings.host;
 		}
 
-		if (!newSettings.path) {
-			settings.path = process.env.AZURE_STORAGE_PATH || "";
-		} else {
-			settings.path = newSettings.path;
-		}
+		// if (!newSettings.path) {
+		// 	settings.path = process.env.AZURE_STORAGE_PATH || "";
+		// } else {
+		// 	settings.path = newSettings.path;
+		// }
 
 		if (settings.accessKeyId && settings.secretAccessKey) {
 			blobSvc = azure.createBlobService(settings.accessKeyId, settings.secretAccessKey);
@@ -189,6 +190,10 @@ function saveSettings(settings, res, next) {
 		fetchSettings();
 		res.json("Saved!");
 	});
+}
+
+function sasGenerator(req,res){
+	console.log("hitting here for sas filename",req);
 }
 
 plugin.uploadImage = function (data, callback) {
@@ -297,10 +302,6 @@ function uploadToAzureStorage(filename, rs, callback) {
 			var host = "https://" + settings.accessKeyId +".blob.core.windows.net/" + settings.container;
 			if (settings.host && 0 < settings.host.length) {
 				host = settings.host;
-		
-				if (!host.startsWith("http")) {
-					host = "http://" + host;
-				}
 			}
 			next(null, key, host);
 		},
@@ -319,17 +320,20 @@ function uploadToAzureStorage(filename, rs, callback) {
 				if (err) {
 					return (next(makeError(err)));
 				}
-
 				var response = {
 					name: filename,
-					url: host + "/" + key
+					url:"/downloads/sasgenerator"
+					//url:"https://" + host + "/nodebb/" + key				
 				};
+				console.log("yes");
 
 				next(null, response);
 			});
 		}
 	], callback);
 }
+
+
 
 plugin.menu = function (custom_header, callback) {
 	custom_header.plugins.push({
@@ -340,5 +344,6 @@ plugin.menu = function (custom_header, callback) {
 
 	callback(null, custom_header);
 };
+
 
 module.exports = plugin;
