@@ -58,7 +58,7 @@ plugin.load = function (params, callback) {
 
 		params.router.post("/api" + adminRoute + "/assettings", assettings);
 		params.router.post("/api" + adminRoute + "/credentials", credentials);
-		params.router.get("/downloads/sasgenerator",sasGenerator);
+		params.router.get("/api/downloads/sasgenerator/",sasGenerator);
 
 		callback();
 	});
@@ -192,9 +192,7 @@ function saveSettings(settings, res, next) {
 	});
 }
 
-function sasGenerator(req,res){
-	console.log("hitting here for sas filename",req);
-}
+
 
 plugin.uploadImage = function (data, callback) {
 	async.waterfall([
@@ -322,18 +320,15 @@ function uploadToAzureStorage(filename, rs, callback) {
 				}
 				var response = {
 					name: filename,
-					url:"/downloads/sasgenerator"
+					url:"/api/downloads/sasgenerator?key="+key
 					//url:"https://" + host + "/nodebb/" + key				
 				};
-				console.log("yes");
 
 				next(null, response);
 			});
 		}
 	], callback);
 }
-
-
 
 plugin.menu = function (custom_header, callback) {
 	custom_header.plugins.push({
@@ -345,5 +340,25 @@ plugin.menu = function (custom_header, callback) {
 	callback(null, custom_header);
 };
 
+function sasGenerator(req,res,next)
+{
+	var docName = req.query.key;
+	var startDate = new Date();
+	var expiryDate = new Date(startDate);
+	expiryDate.setMinutes(startDate.getMinutes() + 5);
+	startDate.setMinutes(startDate.getMinutes() - 5);
+
+	var sharedAccessPolicy = {
+		AccessPolicy: {
+			Permissions: azure.BlobUtilities.SharedAccessPermissions.READ,
+			Start: startDate,
+			Expiry: expiryDate
+		}
+	};
+    Blob()
+	var token = blobSvc.generateSharedAccessSignature(settings.container, docName, sharedAccessPolicy);
+	var sasUrl = blobSvc.getUrl(settings.container, docName, token);
+	res.redirect(sasUrl);
+}
 
 module.exports = plugin;
